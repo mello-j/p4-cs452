@@ -95,18 +95,17 @@ void queue_destroy(queue_t q) {
     }
     //lock the mutex to safely destroy the queue
     pthread_mutex_lock(&q->lock);
-    //free the buffer
-    free(q->buffer);
     //destroy the mutex and condition variables
     pthread_mutex_destroy(&q->lock);
     pthread_cond_destroy(&q->not_empty);
     pthread_cond_destroy(&q->not_full);
-    //free the queue structure
-    free(q);
     //unlock the mutex
     pthread_mutex_unlock(&q->lock);
-    //return
-    return;
+     //free the buffer
+     free(q->buffer);
+    //free the queue structure
+    free(q);
+     return;
 }
 
 /**
