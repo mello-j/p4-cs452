@@ -10,6 +10,11 @@
  * initialization, destruction, and shutdown.
  * It is designed to be used in a multi-threaded environment.
  * 
+ * 
+ * Claude LLM was used to generate comments, and functon headers and fixing some of my 
+ * poor namiong conventions.
+ * 
+ * Copilot/IDE suggestions were also used to complete some of the code.
  */
 
 
