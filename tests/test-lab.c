@@ -140,8 +140,8 @@ void test_enqueue_after_shutdown(void)
 void test_null_queue_operations(void)
 {
     // Test behaviors with NULL queue
-    TEST_ASSERT_FALSE(is_empty(NULL));
-    TEST_ASSERT_FALSE(is_shutdown(NULL));
+    TEST_ASSERT_TRUE(is_empty(NULL));
+    TEST_ASSERT_TRUE(is_shutdown(NULL));
     TEST_ASSERT_TRUE(dequeue(NULL) == NULL);
     
     // These should not crash

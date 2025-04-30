@@ -47,12 +47,14 @@ queue_t queue_init(int capacity) {
     //allocate memory for the queue
     queue_t q = (queue_t)malloc(sizeof(struct queue));
     if (!q) {
+        perror("Failed to allocate memory for queue");
         return NULL;
     }
     //allocate memory for the buffer
     q->buffer = (void **)malloc(sizeof(void *) * capacity);
     if (!q->buffer) {
         free(q);
+        perror("Failed to allocate memory for queue buffer");
         return NULL;
     }
     //initialize the queue
@@ -61,6 +63,7 @@ queue_t queue_init(int capacity) {
     q->head = 0;
     q->tail = 0;
     q->shutdown = false;
+
     //initialize the mutex and condition variables
     if (pthread_mutex_init(&q->lock, NULL) != 0) {
         free(q->buffer);
@@ -72,6 +75,7 @@ queue_t queue_init(int capacity) {
         pthread_mutex_destroy(&q->lock);
         free(q->buffer);
         free(q);
+        perror("Failed to initialize condition variable");
         return NULL;
     }
     if (pthread_cond_init(&q->not_full, NULL) != 0) {
@@ -79,6 +83,7 @@ queue_t queue_init(int capacity) {
         pthread_cond_destroy(&q->not_empty);
         free(q->buffer);
         free(q);
+        perror("Failed to initialize condition variable");
         return NULL;
     }
     //return the initialized queue
@@ -95,17 +100,25 @@ void queue_destroy(queue_t q) {
     }
     //lock the mutex to safely destroy the queue
     pthread_mutex_lock(&q->lock);
+    //set the shutdown flag to true
+    q->shutdown = true;
+    //signal all threads waiting on the queue
+    pthread_cond_broadcast(&q->not_empty);
+    pthread_cond_broadcast(&q->not_full);
+    
+    //unlock the mutex
+    pthread_mutex_unlock(&q->lock);
+    
     //destroy the mutex and condition variables
     pthread_mutex_destroy(&q->lock);
     pthread_cond_destroy(&q->not_empty);
     pthread_cond_destroy(&q->not_full);
-    //unlock the mutex
-    pthread_mutex_unlock(&q->lock);
-     //free the buffer
-     free(q->buffer);
+
+    //free the buffer
+    free(q->buffer);
     //free the queue structure
     free(q);
-     return;
+    return;
 }
 
 /**
@@ -156,14 +169,14 @@ void *dequeue(queue_t q) {
     //lock the mutex to safely modify the queue
     pthread_mutex_lock(&q->lock);
 
-    //check if the queue is empty
+    //wait for elements to be in the queue or shutdown
     while (q->size == 0 && !q->shutdown) {
         //wait for the queue to be not empty
         pthread_cond_wait(&q->not_empty, &q->lock);
     }
 
-    //check if the queue is shutdown
-    if (q->shutdown && q->size == 0) {
+    //check if the queue is empty
+    if (q->size == 0) {
         pthread_mutex_unlock(&q->lock);
         return NULL;
     }
@@ -214,19 +227,15 @@ void queue_shutdown(queue_t q) {
 bool is_empty(queue_t q) {
     //validate input
     if (!q || q==NULL) {
-        return false;
+        return true;
     }
     //lock the mutex to safely check the queue
     pthread_mutex_lock(&q->lock);
-    //check if the queue is empty
-    if (q->size == 0) {
-        pthread_mutex_unlock(&q->lock);
-        return true;
-    }
+    bool empty = (q->size == 0);
     //unlock the mutex
     pthread_mutex_unlock(&q->lock);
-    //if the queue is not empty, return false
-    return false;
+    //return the empty status
+    return empty;
 }
 
 /**
@@ -237,18 +246,15 @@ bool is_empty(queue_t q) {
 bool is_shutdown(queue_t q) {
     //validate input
     if (!q || q==NULL) {
-        return false;
+        return true;
     }
     //lock the mutex to safely check the queue
     pthread_mutex_lock(&q->lock);
-    //check if the queue is shutdown
-    if (q->shutdown) {
-        pthread_mutex_unlock(&q->lock);
-        return q->shutdown;
-    }
 
+    //check if the queue is shutdown
+    bool shutdown = q->shutdown;
     //unlock the mutex
     pthread_mutex_unlock(&q->lock);
-    //if the queue is not shutdown, return false
-    return false;
+    //return the shutdown status
+    return shutdown;
 }
