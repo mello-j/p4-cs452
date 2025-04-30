@@ -67,18 +67,18 @@ queue_t queue_init(int capacity) {
         free(q);
         return NULL;
     }
+
     if (pthread_cond_init(&q->not_empty, NULL) != 0) {
-        free(q->buffer);
-        free(q);
         pthread_mutex_destroy(&q->lock);
+        free(q->buffer);
         free(q);
         return NULL;
     }
     if (pthread_cond_init(&q->not_full, NULL) != 0) {
-        free(q->buffer);
-        free(q);
         pthread_mutex_destroy(&q->lock);
         pthread_cond_destroy(&q->not_empty);
+        free(q->buffer);
+        free(q);
         return NULL;
     }
     //return the initialized queue
