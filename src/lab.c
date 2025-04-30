@@ -219,7 +219,6 @@ bool is_empty(queue_t q) {
         pthread_mutex_unlock(&q->lock);
         return true;
     }
-
     //unlock the mutex
     pthread_mutex_unlock(&q->lock);
     //if the queue is not empty, return false
@@ -247,5 +246,5 @@ bool is_shutdown(queue_t q) {
     //unlock the mutex
     pthread_mutex_unlock(&q->lock);
     //if the queue is not shutdown, return false
-    return q->shutdown;
+    return false;
 }
