@@ -14,7 +14,8 @@ make
 make check
 ```
 
-This runs a handful of tests through the command line tester provided by the instructor.
+This runs a handful of tests through the command line tester provided by the instructor. It is also integrated
+in the unit testing as the last test if make check is run.
 
 ```bash
 ./test.sh
