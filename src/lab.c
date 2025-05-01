@@ -47,14 +47,14 @@ queue_t queue_init(int capacity) {
     //allocate memory for the queue
     queue_t q = (queue_t)malloc(sizeof(struct queue));
     if (!q) {
-        perror("Failed to allocate memory for queue");
+        fprintf(stderr, "Failed to allocate memory for queue\n");
         return NULL;
     }
     //allocate memory for the buffer
     q->buffer = (void **)malloc(sizeof(void *) * capacity);
     if (!q->buffer) {
+        fprintf(stderr, "Failed to allocate memory for queue buffer\n");
         free(q);
-        perror("Failed to allocate memory for queue buffer");
         return NULL;
     }
     //initialize the queue
@@ -66,24 +66,25 @@ queue_t queue_init(int capacity) {
 
     //initialize the mutex and condition variables
     if (pthread_mutex_init(&q->lock, NULL) != 0) {
+        fprintf(stderr, "Failed to initialize mutex\n");
         free(q->buffer);
         free(q);
         return NULL;
     }
 
     if (pthread_cond_init(&q->not_empty, NULL) != 0) {
+        fprintf(stderr, "Failed to initialize not_empty condition variable\n");
         pthread_mutex_destroy(&q->lock);
         free(q->buffer);
         free(q);
-        perror("Failed to initialize condition variable");
         return NULL;
     }
     if (pthread_cond_init(&q->not_full, NULL) != 0) {
+        fprintf(stderr, "Failed to initialize not_full condition variable\n");
         pthread_mutex_destroy(&q->lock);
         pthread_cond_destroy(&q->not_empty);
         free(q->buffer);
         free(q);
-        perror("Failed to initialize condition variable");
         return NULL;
     }
     //return the initialized queue
@@ -95,7 +96,7 @@ queue_t queue_init(int capacity) {
  * @param q The queue to destroy
  */
 void queue_destroy(queue_t q) {
-    if (!q || q==NULL) {
+    if (!q) {
         return;
     }
     //lock the mutex to safely destroy the queue
@@ -128,7 +129,7 @@ void queue_destroy(queue_t q) {
  */
 void enqueue(queue_t q, void *data) {
     //validate input
-    if (!q || q==NULL) {
+    if (!q) {
         return;
     }
     //lock the mutex to safely modify the queue
@@ -162,7 +163,7 @@ void enqueue(queue_t q, void *data) {
  */
 void *dequeue(queue_t q) {
     //validate input
-    if (!q || q==NULL) {
+    if (!q) {
         return NULL;
     }
 
@@ -203,7 +204,7 @@ void *dequeue(queue_t q) {
  */
 void queue_shutdown(queue_t q) {
     //validate input
-    if (!q || q==NULL) {
+    if (!q) {
         return;
     }
     //lock the mutex to safely modify the queue
@@ -226,7 +227,7 @@ void queue_shutdown(queue_t q) {
  */
 bool is_empty(queue_t q) {
     //validate input
-    if (!q || q==NULL) {
+    if (!q) {
         return true;
     }
     //lock the mutex to safely check the queue
@@ -244,17 +245,14 @@ bool is_empty(queue_t q) {
  * @return true if the queue is shutdown, false otherwise
  */
 bool is_shutdown(queue_t q) {
-    //validate input
-    if (!q || q==NULL) {
+    /**
+     * Updated after class....we're not doing anything with the queue so...
+     * We don't really need to lock the mutex here for safety.
+     * Locking could actually cause a performance hit if this is called
+     * frequently. And we just need to check the shutdown flag.
+     */
+    if (!q) {
         return true;
     }
-    //lock the mutex to safely check the queue
-    pthread_mutex_lock(&q->lock);
-
-    //check if the queue is shutdown
-    bool shutdown = q->shutdown;
-    //unlock the mutex
-    pthread_mutex_unlock(&q->lock);
-    //return the shutdown status
-    return shutdown;
+    return q->shutdown; 
 }
